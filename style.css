@@ -4,8 +4,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #FFFFFF; /* Initial state: white */
-    /* overflow: hidden; */ /* Prevent scrollbars during animations - Temporarily commented out for diagnosis */
+    background-color: #FFFFFF; /* Ensured: Initial state is white */
+    /* overflow: hidden; */ /* Keep commented out from previous diagnosis for now */
 }
 
 #black-overlay {
@@ -15,43 +15,49 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: #000000;
-    opacity: 0;
-    z-index: 1; /* Will cover everything when it becomes opaque */
-    pointer-events: none; /* Allow interaction with elements underneath while transparent */
+    opacity: 0; /* This is for the initial animation, will be set to 1 by JS at the end of it */
+    z-index: 1; 
+    pointer-events: none; 
 }
 
 #hashtag-text {
     font-family: 'Inter', sans-serif;
-    font-weight: 400; /* Regular - initial */
-    /* font-size: calc(0.33 * 100vw); */ /* Old value */
-    /* font-size: 8vw; */ /* New value for testing - previous diagnostic */
-    font-size: 20px; /* Small fixed size for diagnosis */
-    
-    /* white-space: nowrap; */ /* Prevent wrapping - Removed for diagnosis */
-    /* overflow: hidden; */ /* Hide overflow - Removed for diagnosis */
-    /* text-overflow: ellipsis; */ /* Show ellipsis if text overflows - Removed for diagnosis */
-    width: auto; /* Ensure width is not overly constrained */
-    
-    color: white; /* Initial color, visible before mask is applied */
+    width: 33vw; 
+    font-size: 4.5vw; 
+    font-weight: 300; /* Light weight - initial */
+    color: white; /* Initial text color */
+    opacity: 1; 
     text-align: center;
-    opacity: 0; /* Initially hidden, will be faded in by JS */
-    z-index: 2; /* Ensure hashtag is above the black overlay */
+    z-index: 2; 
+    cursor: default; /* Default cursor, will change on draggable panel */
     
-    /* Transitions for smooth effect */
-    transition: opacity 1.5s ease-in-out, font-weight 1s ease-in-out;
-    
-    /* Gradient and mask properties will be applied by adding .hashtag-masked class via JavaScript,
-       not directly on the base style of the element. */
+    /* Transitions for hover effect */
+    transition: font-weight 0.4s ease, color 0.3s ease-in-out; 
+    /* Note: transitioning background-image can be tricky/not animatable.
+       The reveal is done by color becoming transparent. */
 }
 
-.hashtag-masked {
-    font-weight: 600 !important; /* Semibold, !important to override inline if needed, though class specificity should be enough */
+#hashtag-text:hover {
+    font-weight: 800; /* Bold weight on hover */
+    
+    /* Apply gradient mask properties directly on hover */
     background-image: linear-gradient(45deg, var(--color1, #ff0000), var(--color2, #00ff00), var(--color3, #0000ff));
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent !important; /* Important to override initial white color */
+    color: transparent; /* Reveals the background gradient */
     -webkit-text-fill-color: transparent; /* For Safari */
 }
+
+/*
+.hashtag-masked { 
+    font-weight: 800 !important; 
+    background-image: linear-gradient(45deg, var(--color1, #ff0000), var(--color2, #00ff00), var(--color3, #0000ff));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent;
+}
+*/
 
 /* Control Panel Styling */
 #control-panel {
@@ -59,24 +65,24 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 300px; /* Adjust as needed */
+    width: 300px; 
     padding: 20px;
-    background-color: rgba(70, 70, 70, 0.6); /* Semi-transparent dark background */
+    background-color: rgba(70, 70, 70, 0.6); 
     backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%); /* For Safari */
-    border-radius: 25px; /* Squircled look - adjust for more/less "squircley" feel. True squircle is harder. */
-    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle white outline */
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Soft shadow for depth */
-    z-index: 100; /* Ensure it's above other content */
+    -webkit-backdrop-filter: blur(10px) saturate(180%); 
+    border-radius: 25px; 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Base shadow */
+    z-index: 100; 
     color: #FFFFFF;
-    display: none; /* Initially hidden - will be toggled by JS */
-    transition: opacity 0.3s ease, transform 0.3s ease; /* For show/hide animation if needed */
+    display: none; 
+    /* Updated transition for parallax and shadow effects */
+    transition: opacity 0.3s ease, transform 0.1s ease-out, box-shadow 0.1s ease-out; 
+    cursor: grab; /* For draggable functionality */
 }
 
 #control-panel.visible {
     display: block; 
-    /* Or use flex/grid if the panel itself needs to be a flex/grid container */
-    /* For now, block is fine as panel-content handles inner layout */
 }
 
 .panel-content {
@@ -87,7 +93,7 @@ body {
 
 .control-section {
     padding: 10px;
-    background-color: rgba(0, 0, 0, 0.2); /* Slightly darker background for sections */
+    background-color: rgba(0, 0, 0, 0.2); 
     border-radius: 15px;
 }
 
@@ -118,14 +124,14 @@ body {
 #fps-graph {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
-    width: 100%; /* Canvas itself has width/height, this makes it responsive in layout */
+    width: 100%; 
     height: auto; 
 }
 
-/* Class to hide elements, used by JS to toggle panel visibility */
-/* The .hidden class was already used for the panel's initial state in HTML.
-   We ensure it reliably hides elements. If #control-panel relies on its own
-   display: none; for initial state, this .hidden class is for generic use. */
 .hidden { 
     display: none !important; 
+}
+
+.dragging {
+    cursor: grabbing !important;
 }
