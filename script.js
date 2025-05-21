@@ -1,18 +1,38 @@
+console.log("DEBUG: script.js execution started.");
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DEBUG: DOMContentLoaded event fired.");
+    
     const body = document.body;
     const blackOverlay = document.getElementById('black-overlay');
     const themeColorMeta = document.getElementById('theme-color-meta');
-    const hashtagText = document.getElementById('hashtag-text'); // For initial fade-in
-    const controlPanel = document.getElementById('control-panel'); // Get reference to control panel
+    const hashtagText = document.getElementById('hashtag-text'); 
+    const controlPanel = document.getElementById('control-panel');
+
+    // Existing diagnostic line:
+    if (hashtagText) {
+        console.log("DEBUG: Initial hashtagText.textContent:", hashtagText.textContent);
+        console.log("DEBUG: Initial hashtagText.innerHTML:", hashtagText.innerHTML);
+    } else {
+        console.log("DEBUG: hashtagText element not found.");
+    }
 
     const animationDuration = 7000; // Total duration for background animation in ms
     const fadeToBlackDuration = 2000; // How long the fade to pure black (via overlay) takes at the end
     let startTime = null;
 
     function animateBackground(timestamp) {
+        // New log:
+        if (!startTime) { // Log only on the first call to avoid spamming for subsequent frames
+            console.log("DEBUG: animateBackground started.");
+        }
+        
         if (!startTime) startTime = timestamp;
         const elapsedTime = timestamp - startTime;
         const progress = Math.min(elapsedTime / animationDuration, 1);
+        
+        // New log: (Consider throttling if too verbose for production debugging)
+        console.log("DEBUG: animateBackground progress:", progress);
 
         // Animate HSL: Hue from 0 to 360 (full spectrum), Saturation 100%, Lightness from 100% (white) to 0% (black)
         const hue = (progress * 360) % 360; // Cycle through hues
@@ -50,11 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(animateBackground);
         } else {
             // Animation complete
+            // New log:
+            console.log("DEBUG: animateBackground complete. Final body.style.backgroundColor:", body.style.backgroundColor);
             body.style.backgroundColor = '#000000'; // Final background color
             blackOverlay.style.opacity = 1; // Ensure overlay is fully opaque
             themeColorMeta.setAttribute('content', '#000000'); // Final theme color
             
-            // Call the updated hashtag transition function
+            // New log:
+            console.log("DEBUG: Calling initHashtagVisualTransition...");
             initHashtagVisualTransition(); 
         }
     }
@@ -76,13 +99,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Renamed for clarity and updated logic
 function initHashtagVisualTransition() {
+    // New log:
+    console.log("DEBUG: initHashtagVisualTransition started.");
     const hashtagElement = document.getElementById('hashtag-text');
     
     // 1. Start fade-in (opacity is initially 0, CSS handles transition which is 1.5s)
     hashtagElement.style.opacity = 1;
+    // New log:
+    console.log("DEBUG: initHashtagVisualTransition: Fading in hashtag. Opacity set to 1.");
 
     // 2. After a delay, apply the masked effect
     setTimeout(() => {
+        // New log:
+        console.log("DEBUG: initHashtagVisualTransition: setTimeout callback. Applying .hashtag-masked and starting gradient animation.");
         hashtagElement.classList.add('hashtag-masked');
         // The .hashtag-masked class applies:
         // - font-weight: 600

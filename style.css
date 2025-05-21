@@ -5,7 +5,7 @@ body {
     align-items: center;
     justify-content: center;
     background-color: #FFFFFF; /* Initial state: white */
-    overflow: hidden; /* Prevent scrollbars during animations */
+    /* overflow: hidden; */ /* Prevent scrollbars during animations - Temporarily commented out for diagnosis */
 }
 
 #black-overlay {
@@ -23,7 +23,15 @@ body {
 #hashtag-text {
     font-family: 'Inter', sans-serif;
     font-weight: 400; /* Regular - initial */
-    font-size: calc(0.33 * 100vw); /* 33% of viewport width */
+    /* font-size: calc(0.33 * 100vw); */ /* Old value */
+    /* font-size: 8vw; */ /* New value for testing - previous diagnostic */
+    font-size: 20px; /* Small fixed size for diagnosis */
+    
+    /* white-space: nowrap; */ /* Prevent wrapping - Removed for diagnosis */
+    /* overflow: hidden; */ /* Hide overflow - Removed for diagnosis */
+    /* text-overflow: ellipsis; */ /* Show ellipsis if text overflows - Removed for diagnosis */
+    width: auto; /* Ensure width is not overly constrained */
+    
     color: white; /* Initial color, visible before mask is applied */
     text-align: center;
     opacity: 0; /* Initially hidden, will be faded in by JS */
