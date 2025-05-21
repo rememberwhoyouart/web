@@ -4,28 +4,120 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #111; /* Added a dark background for better contrast */
+    background-color: #FFFFFF; /* Initial state: white */
+    overflow: hidden; /* Prevent scrollbars during animations */
+}
+
+#black-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    opacity: 0;
+    z-index: 1; /* Will cover everything when it becomes opaque */
+    pointer-events: none; /* Allow interaction with elements underneath while transparent */
 }
 
 #hashtag-text {
     font-family: 'Inter', sans-serif;
-    font-weight: 600; /* Semibold */
-    width: calc(100% - 138px); /* 69px margin on each side */
-    margin: 0 69px;
-    font-size: 10vw; /* Adjust as needed, consider using vw or vmin for responsiveness */
+    font-weight: 400; /* Regular - initial */
+    font-size: calc(0.33 * 100vw); /* 33% of viewport width */
+    color: white; /* Initial color, visible before mask is applied */
     text-align: center;
+    opacity: 0; /* Initially hidden, will be faded in by JS */
+    z-index: 2; /* Ensure hashtag is above the black overlay */
     
-    /* Gradient controlled by JavaScript */
-    background-image: linear-gradient(
-        45deg, 
-        var(--color1, #ff0000), /* Default fallback colors */
-        var(--color2, #00ff00),
-        var(--color3, #0000ff)
-    );
+    /* Transitions for smooth effect */
+    transition: opacity 1.5s ease-in-out, font-weight 1s ease-in-out;
     
-    /* Text mask effect */
+    /* Gradient and mask properties will be applied by adding .hashtag-masked class via JavaScript,
+       not directly on the base style of the element. */
+}
+
+.hashtag-masked {
+    font-weight: 600 !important; /* Semibold, !important to override inline if needed, though class specificity should be enough */
+    background-image: linear-gradient(45deg, var(--color1, #ff0000), var(--color2, #00ff00), var(--color3, #0000ff));
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
+    color: transparent !important; /* Important to override initial white color */
+    -webkit-text-fill-color: transparent; /* For Safari */
+}
+
+/* Control Panel Styling */
+#control-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px; /* Adjust as needed */
+    padding: 20px;
+    background-color: rgba(70, 70, 70, 0.6); /* Semi-transparent dark background */
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%); /* For Safari */
+    border-radius: 25px; /* Squircled look - adjust for more/less "squircley" feel. True squircle is harder. */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle white outline */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Soft shadow for depth */
+    z-index: 100; /* Ensure it's above other content */
+    color: #FFFFFF;
+    display: none; /* Initially hidden - will be toggled by JS */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* For show/hide animation if needed */
+}
+
+#control-panel.visible {
+    display: block; 
+    /* Or use flex/grid if the panel itself needs to be a flex/grid container */
+    /* For now, block is fine as panel-content handles inner layout */
+}
+
+.panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.control-section {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2); /* Slightly darker background for sections */
+    border-radius: 15px;
+}
+
+.control-section p,
+.control-section label {
+    margin: 0 0 5px 0;
+    font-size: 0.9em;
+}
+
+.control-section input[type="range"] {
+    width: 100%;
+}
+
+.control-section button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.control-section button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#fps-graph {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    width: 100%; /* Canvas itself has width/height, this makes it responsive in layout */
+    height: auto; 
+}
+
+/* Class to hide elements, used by JS to toggle panel visibility */
+/* The .hidden class was already used for the panel's initial state in HTML.
+   We ensure it reliably hides elements. If #control-panel relies on its own
+   display: none; for initial state, this .hidden class is for generic use. */
+.hidden { 
+    display: none !important; 
 }
