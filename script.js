@@ -10,6 +10,9 @@ let gradientAnimationTime = 0;
 let gradientAnimationReqId = null; 
 let animationSpeedFactor = 1.0; // Default speed, will be updated from slider
 
+// Variable to store the start time of the background animation
+let backgroundAnimationStartTime = null; 
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOMContentLoaded event fired.");
     
@@ -18,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeColorMeta = document.getElementById('theme-color-meta');
     const hashtagText = document.getElementById('hashtag-text'); 
     const controlPanel = document.getElementById('control-panel');
-    const speedControl = document.getElementById('speed-control'); // Get speed control element
+    const speedControl = document.getElementById('speed-control'); 
 
     // Existing diagnostic line:
     if (hashtagText) {
@@ -30,75 +33,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize speed control if the element exists
     if (speedControl) {
-        // Set initial animationSpeedFactor based on slider's default value
         animationSpeedFactor = parseFloat(speedControl.value) / 100.0;
-
         speedControl.addEventListener('input', () => {
             animationSpeedFactor = parseFloat(speedControl.value) / 100.0;
-            console.log("DEBUG: Animation speed factor set to:", animationSpeedFactor); // For feedback
+            console.log("DEBUG: Animation speed factor set to:", animationSpeedFactor); 
         });
     }
 
-    const animationDuration = 7000; // Total duration for background animation in ms
-    const fadeToBlackDuration = 2000; // How long the fade to pure black (via overlay) takes at the end
-    let startTime = null;
-
+    // animateBackground function with new timing and easing logic
     function animateBackground(timestamp) {
-        // New log:
-        if (!startTime) { // Log only on the first call to avoid spamming for subsequent frames
-            console.log("DEBUG: animateBackground started.");
+        if (!backgroundAnimationStartTime) {
+            backgroundAnimationStartTime = timestamp;
+            console.log("DEBUG: animateBackground started at timestamp:", timestamp);
         }
-        
-        if (!startTime) startTime = timestamp;
-        const elapsedTime = timestamp - startTime;
-        const progress = Math.min(elapsedTime / animationDuration, 1);
-        
-        // New log: (Consider throttling if too verbose for production debugging)
-        // console.log("DEBUG: animateBackground progress:", progress); // Throttled for less console noise
 
-        // Animate HSL: Hue from 0 to 360 (full spectrum), Saturation 100%, Lightness from 100% (white) to 0% (black)
-        const hue = (progress * 360) % 360; // Cycle through hues
-        let lightness;
-        if (progress < 0.5) { // First half: White to Full Color
-            lightness = 1 - (progress * 2 * 0.5); // L goes from 1 to 0.5
-        } else { // Second half: Full Color to Black
-            lightness = 0.5 - ((progress - 0.5) * 2 * 0.5); // L goes from 0.5 to 0
+        const localAnimationDuration = 3000;
+        const localFadeToBlackDuration = 1500;
+        
+        const elapsedTime = timestamp - backgroundAnimationStartTime;
+        
+        let easedProgress;
+        // Calculate easedProgress based on two halves of the animation
+        if (elapsedTime < localAnimationDuration / 2) { // First half (0 to 1.5s)
+            let halfProgress = elapsedTime / (localAnimationDuration / 2); // Linear progress for first half (0 to 1)
+            easedProgress = 0.5 * (halfProgress * halfProgress); // Quadratic ease-in, results in 0 to 0.5
+        } else { // Second half (1.5s to 3s)
+            let halfProgress = (elapsedTime - localAnimationDuration / 2) / (localAnimationDuration / 2); // Linear progress for second half (0 to 1)
+            easedProgress = 0.5 + 0.5 * (1 - (1 - halfProgress) * (1 - halfProgress)); // Quadratic ease-out, results in 0.5 to 1
         }
-        lightness = Math.max(0, Math.min(1, lightness)); // Clamp lightness
+        easedProgress = Math.min(Math.max(easedProgress, 0), 1); // Clamp easedProgress between 0 and 1
+
+        // console.log(`DEBUG: ElapsedTime: ${elapsedTime.toFixed(2)}, EasedProgress: ${easedProgress.toFixed(3)}`);
+
+        const hue = (easedProgress * 360) % 360; 
+        
+        let finalLightness;
+        if (easedProgress < 0.5) { // First half of visual effect (white to color)
+            // As easedProgress goes from 0 to 0.5, finalLightness goes from 1 (white) to 0.5 (full color)
+            finalLightness = 1 - (easedProgress / 0.5) * 0.5; 
+        } else { // Second half of visual effect (color to black)
+            // As easedProgress goes from 0.5 to 1, finalLightness goes from 0.5 (full color) to 0 (black)
+            finalLightness = 0.5 - ((easedProgress - 0.5) / 0.5) * 0.5; 
+        }
+        finalLightness = Math.max(0, Math.min(1, finalLightness)); // Clamp lightness
 
         const saturation = 1; // Keep saturation high for vivid colors
 
-        if (progress < 1) { // Only update body background color if not fully black
-            body.style.backgroundColor = `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
-        }
-
-        // Update theme color dynamically
-        if (progress > 0.1 && progress < 0.9 && themeColorMeta.content !== '#808080') { 
-             themeColorMeta.setAttribute('content', '#808080'); // Example: gray, or pick a vibrant color
-        }
-
-
-        // Start fading in black overlay towards the end
-        const overlayStartTime = animationDuration - fadeToBlackDuration;
-        if (elapsedTime > overlayStartTime) {
-            const overlayProgress = Math.min((elapsedTime - overlayStartTime) / fadeToBlackDuration, 1);
-            blackOverlay.style.opacity = overlayProgress;
-            if (overlayProgress === 1) {
-                body.style.backgroundColor = '#000000'; // Ensure final body is black under overlay
+        if (easedProgress < 1) {
+            const newBgColor = `hsl(${hue}, ${saturation * 100}%, ${finalLightness * 100}%)`;
+            body.style.backgroundColor = newBgColor;
+            if (themeColorMeta) { // Check if meta tag exists
+                themeColorMeta.setAttribute('content', newBgColor);
             }
         }
 
-        if (progress < 1) {
+        // Fade in black overlay
+        if (elapsedTime >= localAnimationDuration / 2) { // Start fade when elapsed time is >= 1.5s (second half)
+            // Progress of the overlay fade, from 0 to 1, over localFadeToBlackDuration (1.5s)
+            const overlayProgress = Math.min((elapsedTime - (localAnimationDuration / 2)) / localFadeToBlackDuration, 1);
+            blackOverlay.style.opacity = overlayProgress;
+            if (overlayProgress === 1) {
+                // Ensure final body is black and theme color is black if overlay fully covers
+                const finalBgColor = '#000000';
+                body.style.backgroundColor = finalBgColor;
+                if (themeColorMeta) {
+                    themeColorMeta.setAttribute('content', finalBgColor);
+                }
+            }
+        } else {
+            blackOverlay.style.opacity = 0; // Ensure overlay is not visible in first half
+        }
+
+        if (elapsedTime < localAnimationDuration) {
             requestAnimationFrame(animateBackground);
         } else {
             // Animation complete
             console.log("DEBUG: animateBackground complete. Final body.style.backgroundColor:", body.style.backgroundColor);
-            body.style.backgroundColor = '#000000'; // Final background color
-            blackOverlay.style.opacity = 1; // Ensure overlay is fully opaque
-            themeColorMeta.setAttribute('content', '#000000'); // Final theme color
+            const finalBgColor = '#000000';
+            body.style.backgroundColor = finalBgColor; 
+            blackOverlay.style.opacity = 1; 
+            if (themeColorMeta) {
+                themeColorMeta.setAttribute('content', finalBgColor);
+            }
             
             console.log("DEBUG: Calling initHashtagVisualTransition...");
-            initHashtagVisualTransition(); 
+            if (typeof initHashtagVisualTransition === 'function') {
+                initHashtagVisualTransition(); 
+            }
         }
     }
     
@@ -107,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Control panel toggle logic
     document.addEventListener('keydown', (event) => {
-        if (event.key === '\\') { // Check for backslash key
+        if (event.key === '\\') { 
             if (controlPanel) {
                 controlPanel.classList.toggle('visible');
             }
@@ -115,9 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Control panel dragging logic & Parallax Hover Effects
-    if (controlPanel) { // Ensure panel exists
+    if (controlPanel) { 
         let isDragging = false;
-        let offsetX, offsetY; // To store the mouse position relative to panel's top-left
+        let offsetX, offsetY; 
 
         controlPanel.addEventListener('mousedown', (e) => {
             isDragging = true;
@@ -135,18 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (isDragging) { // Only move if dragging
+            if (isDragging) { 
                 let newX = e.clientX - offsetX;
                 let newY = e.clientY - offsetY;
 
                 controlPanel.style.left = `${newX}px`;
                 controlPanel.style.top = `${newY}px`;
-                // When dragging, we don't want the parallax effect to also apply transform.
-                // Resetting it here ensures the drag is smooth and only position is updated.
-                // The base translate(-50%, -50%) is handled by CSS.
                 controlPanel.style.transform = 'translate(-50%, -50%)'; 
             }
-            // Note: Parallax mousemove is handled by a separate listener on controlPanel itself
         });
 
         document.addEventListener('mouseup', () => {
@@ -157,14 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Parallax Hover Effects for Control Panel
         const maxRotate = 10; 
         const perspective = 500; 
 
         controlPanel.addEventListener('mousemove', (e) => {
             if (controlPanel.classList.contains('dragging')) {
-                // While dragging, keep a neutral transform to avoid interference with dragging position.
-                // The drag listener already sets left/top. We ensure transform doesn't add rotations.
                 controlPanel.style.transform = 'translate(-50%, -50%) perspective(0px) rotateX(0deg) rotateY(0deg)';
                 return; 
             }
@@ -189,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         controlPanel.addEventListener('mouseleave', () => {
-            // Only reset if not currently dragging
             if (!controlPanel.classList.contains('dragging')) {
                  controlPanel.style.transform = 'translate(-50%, -50%) perspective(0px) rotateX(0deg) rotateY(0deg)'; 
                  controlPanel.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)'; 
@@ -220,14 +233,11 @@ function drawFpsGraph(ctx, canvasWidth, canvasHeight, history) {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.lineWidth = 1;
     
-    // Max FPS for graph scaling (e.g., 150, or dynamically based on history)
-    const maxFpsDisplay = Math.max(60, ...history, 120); // Ensure graph can show at least 60/120 FPS
+    const maxFpsDisplay = Math.max(60, ...history, 120); 
 
     ctx.beginPath();
     for (let i = 0; i < history.length; i++) {
-        // Use fpsHistoryCapacity for consistent x spacing
         const x_coord = (i / (fpsHistoryCapacity - 1)) * canvasWidth;
-
         const y = canvasHeight - (Math.min(history[i], maxFpsDisplay) / maxFpsDisplay) * canvasHeight;
         if (i === 0) {
             ctx.moveTo(x_coord, y);
@@ -237,17 +247,15 @@ function drawFpsGraph(ctx, canvasWidth, canvasHeight, history) {
     }
     ctx.stroke();
 
-    // Optional: Draw target FPS lines (e.g., at 30, 60, 120)
-    // Example for 60 FPS line
     const y60 = canvasHeight - (60 / maxFpsDisplay) * canvasHeight;
-    if (y60 > 0 && y60 < canvasHeight) { // Only draw if within bounds
+    if (y60 > 0 && y60 < canvasHeight) { 
         ctx.beginPath();
         ctx.setLineDash([2, 2]);
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.moveTo(0, y60);
         ctx.lineTo(canvasWidth, y60);
         ctx.stroke();
-        ctx.setLineDash([]); // Reset line dash
+        ctx.setLineDash([]); 
     }
 }
 
@@ -268,7 +276,7 @@ function updateGradientColors() {
 
     const canvas = document.getElementById('fps-graph');
     const ctx = canvas ? canvas.getContext('2d') : null;
-    if (ctx) { // Check if canvas and context exist
+    if (ctx) { 
         drawFpsGraph(ctx, canvas.width, canvas.height, fpsHistory);
     }
 
@@ -280,17 +288,16 @@ function updateGradientColors() {
     const g1 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 0.0 + 2)) * 255);
     const b1 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 0.0 + 4)) * 255);
 
-    const r2 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 1.0 + 0)) * 255); // Slightly different x for second color
+    const r2 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 1.0 + 0)) * 255); 
     const g2 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 1.0 + 2)) * 255);
     const b2 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 1.0 + 4)) * 255);
    
-    const r3 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 2.0 + 0)) * 255); // Even more different x for third color
+    const r3 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 2.0 + 0)) * 255); 
     const g3 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 2.0 + 2)) * 255);
     const b3 = Math.floor((0.5 + 0.5 * Math.cos(gradientAnimationTime + 2.0 + 4)) * 255);
 
     const hashtagElement = document.getElementById('hashtag-text');
-    if (hashtagElement) { // Check if element exists
-        // Update CSS custom properties used by the .hashtag-masked class's gradient
+    if (hashtagElement) { 
         hashtagElement.style.setProperty('--color1', `rgb(${r1},${g1},${b1})`);
         hashtagElement.style.setProperty('--color2', `rgb(${r2},${g2},${b2})`);
         hashtagElement.style.setProperty('--color3', `rgb(${r3},${g3},${b3})`);
@@ -300,12 +307,12 @@ function updateGradientColors() {
 }
 
 function ensureGradientUpdateLoopIsRunning() {
-    if (!gradientAnimationReqId) { // Check if it's already running
+    if (!gradientAnimationReqId) { 
         updateGradientColors();
     }
 }
 
-function stopGradientUpdateLoop() { // For later use if needed (e.g. when panel is open)
+function stopGradientUpdateLoop() { 
     if (gradientAnimationReqId) {
         cancelAnimationFrame(gradientAnimationReqId);
         gradientAnimationReqId = null;

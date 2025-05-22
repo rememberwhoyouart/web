@@ -22,29 +22,34 @@ body {
 
 #hashtag-text {
     font-family: 'Inter', sans-serif;
-    width: 33vw; 
-    font-size: 4.5vw; 
+    /* Removed width property */
+    font-size: 96pt; /* New fixed font size */
     font-weight: 300; /* Light weight - initial */
     color: white; /* Initial text color */
-    opacity: 1; 
+    opacity: 1; /* Should be immediately visible */
     text-align: center;
     z-index: 2; 
-    cursor: default; /* Default cursor, will change on draggable panel */
+    cursor: default; /* Base cursor */
     
-    /* Transitions for hover effect */
-    transition: font-weight 0.4s ease, color 0.3s ease-in-out; 
-    /* Note: transitioning background-image can be tricky/not animatable.
-       The reveal is done by color becoming transparent. */
+    /* Updated transition for delayed gradient reveal */
+    transition: font-weight 1s ease-in-out, 
+                color 0.2s ease-in-out 0.9s; /* Color transition starts after 0.9s delay */
+
+    /* Removed overflow, text-overflow, white-space properties */
 }
 
 #hashtag-text:hover {
-    font-weight: 800; /* Bold weight on hover */
+    font-weight: 800; /* Target bold weight */
     
-    /* Apply gradient mask properties directly on hover */
-    background-image: linear-gradient(45deg, var(--color1, #ff0000), var(--color2, #00ff00), var(--color3, #0000ff));
+    /* Gradient mask properties */
+    background-image: linear-gradient(45deg, 
+                        var(--color1, hsl(0, 100%, 50%)), 
+                        var(--color2, hsl(120, 100%, 50%)), 
+                        var(--color3, hsl(240, 100%, 50%))
+                      ); /* Ensure fallback colors are sensible if CSS vars aren't ready */
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent; /* Reveals the background gradient */
+    color: transparent; /* This change triggers the delayed transition, revealing the gradient */
     -webkit-text-fill-color: transparent; /* For Safari */
 }
 
