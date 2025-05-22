@@ -5,7 +5,7 @@ body {
     align-items: center;
     justify-content: center;
     background-color: #FFFFFF; /* Ensured: Initial state is white */
-    /* overflow: hidden; */ /* Keep commented out from previous diagnosis for now */
+    /* overflow: hidden; */ /* Ensured NOT present */
 }
 
 #black-overlay {
@@ -22,34 +22,30 @@ body {
 
 #hashtag-text {
     font-family: 'Inter', sans-serif;
-    /* Removed width property */
-    font-size: 96pt; /* New fixed font size */
-    font-weight: 300; /* Light weight - initial */
-    color: white; /* Initial text color */
-    opacity: 1; /* Should be immediately visible */
+    font-size: 96pt; 
+    font-weight: 400; /* Fixed weight */
+    color: white;     /* Initial text color */
+    opacity: 1; 
     text-align: center;
     z-index: 2; 
-    cursor: default; /* Base cursor */
+    cursor: default;  
     
-    /* Updated transition for delayed gradient reveal */
-    transition: font-weight 1s ease-in-out, 
-                color 0.2s ease-in-out 0.9s; /* Color transition starts after 0.9s delay */
-
-    /* Removed overflow, text-overflow, white-space properties */
+    /* Transition for color change on hover (reveals gradient) */
+    transition: color 0.2s ease-in-out; 
 }
 
 #hashtag-text:hover {
-    font-weight: 800; /* Target bold weight */
+    /* Font-weight does NOT change, remains 400 from base */
     
     /* Gradient mask properties */
     background-image: linear-gradient(45deg, 
                         var(--color1, hsl(0, 100%, 50%)), 
                         var(--color2, hsl(120, 100%, 50%)), 
                         var(--color3, hsl(240, 100%, 50%))
-                      ); /* Ensure fallback colors are sensible if CSS vars aren't ready */
+                      ); 
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent; /* This change triggers the delayed transition, revealing the gradient */
+    color: transparent; /* This change triggers the transition, revealing the gradient */
     -webkit-text-fill-color: transparent; /* For Safari */
 }
 

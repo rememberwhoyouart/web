@@ -47,53 +47,50 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("DEBUG: animateBackground started at timestamp:", timestamp);
         }
 
-        const localAnimationDuration = 3000;
-        const localFadeToBlackDuration = 1500;
+        // Updated durations for a faster animation
+        const localAnimationDuration = 1000; // Changed from 3000
+        const localFadeToBlackDuration = 500;  // Changed from 1500
         
         const elapsedTime = timestamp - backgroundAnimationStartTime;
         
         let easedProgress;
         // Calculate easedProgress based on two halves of the animation
-        if (elapsedTime < localAnimationDuration / 2) { // First half (0 to 1.5s)
-            let halfProgress = elapsedTime / (localAnimationDuration / 2); // Linear progress for first half (0 to 1)
-            easedProgress = 0.5 * (halfProgress * halfProgress); // Quadratic ease-in, results in 0 to 0.5
-        } else { // Second half (1.5s to 3s)
-            let halfProgress = (elapsedTime - localAnimationDuration / 2) / (localAnimationDuration / 2); // Linear progress for second half (0 to 1)
-            easedProgress = 0.5 + 0.5 * (1 - (1 - halfProgress) * (1 - halfProgress)); // Quadratic ease-out, results in 0.5 to 1
+        if (elapsedTime < localAnimationDuration / 2) { // First half
+            let halfProgress = elapsedTime / (localAnimationDuration / 2); 
+            easedProgress = 0.5 * (halfProgress * halfProgress); 
+        } else { // Second half
+            let halfProgress = (elapsedTime - localAnimationDuration / 2) / (localAnimationDuration / 2); 
+            easedProgress = 0.5 + 0.5 * (1 - (1 - halfProgress) * (1 - halfProgress)); 
         }
-        easedProgress = Math.min(Math.max(easedProgress, 0), 1); // Clamp easedProgress between 0 and 1
+        easedProgress = Math.min(Math.max(easedProgress, 0), 1); 
 
         // console.log(`DEBUG: ElapsedTime: ${elapsedTime.toFixed(2)}, EasedProgress: ${easedProgress.toFixed(3)}`);
 
         const hue = (easedProgress * 360) % 360; 
         
         let finalLightness;
-        if (easedProgress < 0.5) { // First half of visual effect (white to color)
-            // As easedProgress goes from 0 to 0.5, finalLightness goes from 1 (white) to 0.5 (full color)
+        if (easedProgress < 0.5) { 
             finalLightness = 1 - (easedProgress / 0.5) * 0.5; 
-        } else { // Second half of visual effect (color to black)
-            // As easedProgress goes from 0.5 to 1, finalLightness goes from 0.5 (full color) to 0 (black)
+        } else { 
             finalLightness = 0.5 - ((easedProgress - 0.5) / 0.5) * 0.5; 
         }
-        finalLightness = Math.max(0, Math.min(1, finalLightness)); // Clamp lightness
+        finalLightness = Math.max(0, Math.min(1, finalLightness)); 
 
-        const saturation = 1; // Keep saturation high for vivid colors
+        const saturation = 1; 
 
         if (easedProgress < 1) {
             const newBgColor = `hsl(${hue}, ${saturation * 100}%, ${finalLightness * 100}%)`;
             body.style.backgroundColor = newBgColor;
-            if (themeColorMeta) { // Check if meta tag exists
+            if (themeColorMeta) { 
                 themeColorMeta.setAttribute('content', newBgColor);
             }
         }
 
         // Fade in black overlay
-        if (elapsedTime >= localAnimationDuration / 2) { // Start fade when elapsed time is >= 1.5s (second half)
-            // Progress of the overlay fade, from 0 to 1, over localFadeToBlackDuration (1.5s)
+        if (elapsedTime >= localAnimationDuration / 2) { 
             const overlayProgress = Math.min((elapsedTime - (localAnimationDuration / 2)) / localFadeToBlackDuration, 1);
             blackOverlay.style.opacity = overlayProgress;
             if (overlayProgress === 1) {
-                // Ensure final body is black and theme color is black if overlay fully covers
                 const finalBgColor = '#000000';
                 body.style.backgroundColor = finalBgColor;
                 if (themeColorMeta) {
@@ -101,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } else {
-            blackOverlay.style.opacity = 0; // Ensure overlay is not visible in first half
+            blackOverlay.style.opacity = 0; 
         }
 
         if (elapsedTime < localAnimationDuration) {
@@ -126,14 +123,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start the background animation
     requestAnimationFrame(animateBackground);
 
-    // Control panel toggle logic
-    document.addEventListener('keydown', (event) => {
-        if (event.key === '\\') { 
-            if (controlPanel) {
+    // Control panel toggle logic with detailed logging
+    if (controlPanel) { // Ensure controlPanel is found
+        console.log("DEBUG: Control Panel element found in DOM."); // Log if panel element exists
+
+        document.addEventListener('keydown', (event) => {
+            console.log("DEBUG: Keydown event detected. Key:", event.key, "Code:", event.code); // Log every keydown
+
+            if (event.key === '\\') { // Check for backslash key
+                console.log("DEBUG: Backslash key pressed.");
                 controlPanel.classList.toggle('visible');
+                console.log("DEBUG: Toggled 'visible' class. Panel now has classes:", controlPanel.className);
+                if (controlPanel.classList.contains('visible')) {
+                    console.log("DEBUG: Panel should be VISIBLE. Computed display:", window.getComputedStyle(controlPanel).display);
+                } else {
+                    console.log("DEBUG: Panel should be HIDDEN. Computed display:", window.getComputedStyle(controlPanel).display);
+                }
             }
-        }
-    });
+        });
+    } else {
+        console.log("DEBUG: Control Panel element NOT found in DOM.");
+    }
 
     // Control panel dragging logic & Parallax Hover Effects
     if (controlPanel) { 
